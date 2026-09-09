@@ -1,5 +1,6 @@
 ref/
 .env
+.mcp.json
 *.log
 node_modules/
 .agent-grid/
