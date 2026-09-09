@@ -353,4 +353,14 @@ Present a text summary of the roadmap:
 - Gate 5: Manual smoke test before merge
 ```
 
-Tell the user: "Your roadmap is live — interactive HTML opened in browser on the canvas. Files in `ref/diagrams/`. Run `/build <TICKET-ID>` to start implementing the first ticket."
+## Step 7 — Open the roadmap dashboard in a browser pane
+
+**This step is mandatory.** After writing all files and creating the summary note pane, open the HTML roadmap on the canvas:
+
+```
+spawn_browser({ url: "file://<absolute-path>/ref/diagrams/<project>-roadmap.html", customTitle: "Roadmap Dashboard" })
+```
+
+The user must see the interactive roadmap dashboard (with all 4 tabs) on the canvas when this command finishes.
+
+Tell the user: "Your roadmap is live — interactive dashboard opened in the browser pane on the canvas. All 4 tabs (Story Map, Timeline, Architecture, Pipeline) are there. Files saved to `ref/diagrams/`. Run `/build <TICKET-ID>` to start implementing the first ticket."

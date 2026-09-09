@@ -456,9 +456,19 @@ Distinguish these clearly (they're different):
 - <How will we know users are actually using this successfully?>
 ```
 
-## Step 8 — Write output
+## Step 8 — Write output and open diagrams
 
-Save the complete plan to `ref/plans/<slugified-project-name>-plan.md`.
+1. Save the complete plan to `ref/plans/<slugified-project-name>-plan.md`.
+2. Create the canvas note panes (see On Finish above).
+3. Generate the HTML diagram files:
+   - `ref/diagrams/<project>-story-map.html` — story map diagram
+   - `ref/diagrams/<project>-architecture.html` — C4 + component diagrams
+4. **Open each HTML file in a browser pane on the canvas:**
+   ```
+   spawn_browser({ url: "file://<absolute-path>/ref/diagrams/<project>-story-map.html", customTitle: "Story Map" })
+   spawn_browser({ url: "file://<absolute-path>/ref/diagrams/<project>-architecture.html", customTitle: "Architecture" })
+   ```
+   This is mandatory — the user must see the interactive diagrams on the canvas when the command finishes.
 
 Present a summary to the user highlighting:
 - Total story count by priority (Must/Should/Nice)

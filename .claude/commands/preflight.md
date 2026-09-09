@@ -286,4 +286,14 @@ Present a final summary:
 
 Save the full preflight report to `ref/plans/<project-name>-preflight.md`.
 
-Tell the user: "Resolve any blockers above, then run `/ticket` to create Linear tickets, or `/build` to start implementing."
+## Step 7 — Open the dependency graph in a browser pane
+
+**This step is mandatory.** After writing all files and creating the note pane, open the HTML dependency graph on the canvas:
+
+```
+spawn_browser({ url: "file://<absolute-path>/ref/diagrams/<project>-preflight.html", customTitle: "Setup Dependencies" })
+```
+
+The user must see the interactive dependency graph on the canvas when this command finishes.
+
+Tell the user: "Preflight checklist is on the canvas. Dependency graph is interactive in the browser pane. Resolve any blockers above, then run `/ticket` to create Linear tickets, or `/build` to start implementing."
