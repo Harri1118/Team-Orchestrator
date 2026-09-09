@@ -66,69 +66,71 @@ Create a Jeff Patton-style story map. The structure:
 - **Row 2 (light orange):** User Tasks — steps within each activity
 - **Row 3+ (blue, grouped by release):** User Stories — specific deliverables
 
-Generate as mermaid block-beta diagram. Adapt the columns and rows to match the actual project:
+**IMPORTANT:** Do NOT use `block-beta` — it has rendering issues in Mermaid JS. Use `flowchart TD` with subgraphs instead:
 
 ```mermaid
----
-title: "<Project Name> — User Story Map"
----
-block-beta
-  columns 10
-
-  %% === ACTIVITIES (top row) ===
-  block:a1["Activity 1"]:3
-  end
-  block:a2["Activity 2"]:2
-  end
-  block:a3["Activity 3"]:3
-  end
-  block:a4["Activity 4"]:2
+flowchart TD
+  subgraph Activities
+    direction LR
+    A1["Activity 1"]
+    A2["Activity 2"]
+    A3["Activity 3"]
+    A4["Activity 4"]
   end
 
-  %% === USER TASKS (second row) ===
-  t1["Task A"]
-  t2["Task B"]
-  t3["Task C"]
-  t4["Task D"]
-  t5["Task E"]
-  t6["Task F"]
-  t7["Task G"]
-  t8["Task H"]
-  t9["Task I"]
-  t10["Task J"]
+  subgraph Tasks
+    direction LR
+    T1["Task A"]
+    T2["Task B"]
+    T3["Task C"]
+    T4["Task D"]
+    T5["Task E"]
+    T6["Task F"]
+  end
 
-  %% === RELEASE SEPARATOR ===
-  space:10
+  subgraph MVP["MVP (Iteration 1)"]
+    direction LR
+    S1["TEAM-1: User signup\n(Must, M)"]
+    S2["TEAM-2: Email verify\n(Must, S)"]
+    S3["TEAM-3: Create item\n(Must, L)"]
+  end
 
-  %% === MVP STORIES ===
-  s1["TEAM-1\nUser signup\n(M)"]
-  s2["TEAM-2\nEmail verify\n(S)"]
-  space
-  s3["TEAM-3\nCreate item\n(L)"]
-  s4["TEAM-4\nList items\n(M)"]
-  space
-  s5["TEAM-5\nDashboard\n(L)"]
-  space:3
+  subgraph V1["v1.0 (Iteration 2)"]
+    direction LR
+    S4["TEAM-6: Search\n(Should, M)"]
+    S5["TEAM-7: Filters\n(Should, S)"]
+    S6["TEAM-8: Export\n(Should, M)"]
+  end
 
-  %% === v1.0 STORIES ===
-  s6["TEAM-6\nSearch\n(M)"]
-  space
-  s7["TEAM-7\nFilters\n(S)"]
-  space
-  s8["TEAM-8\nExport\n(M)"]
-  s9["TEAM-9\nSharing\n(L)"]
-  space:4
+  subgraph Backlog
+    direction LR
+    S7["TEAM-10: Analytics\n(Nice, L)"]
+  end
 
-  %% === BACKLOG ===
-  s10["TEAM-10\nAnalytics\n(L)"]
-  space:9
+  A1 --- T1 & T2
+  A2 --- T3 & T4
+  A3 --- T5
+  A4 --- T6
+
+  T1 --- S1
+  T2 --- S2
+  T3 --- S3
+  T4 --- S4
+  T5 --- S5
+  T6 --- S7
+
+  style Activities fill:#e67e22,color:#fff,stroke:none
+  style Tasks fill:#f39c12,color:#fff,stroke:none
+  style MVP fill:#27ae60,color:#fff,stroke:none
+  style V1 fill:#2980b9,color:#fff,stroke:none
+  style Backlog fill:#7f8c8d,color:#fff,stroke:none
 ```
 
 Adapt this template to the actual project data. Key rules:
-- Activities span multiple columns to group related tasks
-- Each story shows its Linear ID (if available), short title, and size
-- Stories are positioned under the User Task they belong to
-- Visual rows correspond to releases (MVP, 1.0, 1.1, Backlog)
+- Activities at top, linked to tasks, linked to stories
+- Stories grouped into release subgraphs (MVP, v1.0, Backlog)
+- Each story node shows Linear ID (if available), short title, priority, and size
+- Color-code subgraphs: orange = activities, yellow = tasks, green = MVP, blue = v1.0, grey = backlog
 
 This mermaid definition goes into the Story Map tab/panel of the HTML dashboard.
 

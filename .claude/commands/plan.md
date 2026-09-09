@@ -302,34 +302,72 @@ Organize all stories into a story map structure:
 | **Backlog** | - | Story 13, 14 | Future consideration |
 ```
 
-Generate a mermaid diagram that visually represents this story map. Use a block diagram or flowchart:
+Generate a mermaid diagram that visually represents this story map.
+
+**IMPORTANT:** Do NOT use `block-beta` — it has rendering issues in Mermaid JS. Use `flowchart TD` with subgraphs instead. This is reliable and renders correctly:
 
 ```mermaid
-block-beta
-  columns 8
-
-  %% Activities (top row)
-  block:act1["Activity 1"]:2
-  end
-  block:act2["Activity 2"]:2
-  end
-  block:act3["Activity 3"]:2
-  end
-  block:act4["Activity 4"]:2
+flowchart TD
+  subgraph Activities
+    direction LR
+    A1["Activity 1"]
+    A2["Activity 2"]
+    A3["Activity 3"]
+    A4["Activity 4"]
   end
 
-  %% User Tasks (second row)
-  task1["Task A"] task2["Task B"] task3["Task C"] task4["Task D"] task5["Task E"] task6["Task F"] task7["Task G"] task8["Task H"]
+  subgraph Tasks
+    direction LR
+    T1["Task A"]
+    T2["Task B"]
+    T3["Task C"]
+    T4["Task D"]
+    T5["Task E"]
+    T6["Task F"]
+  end
 
-  %% MVP stories
-  space:8
-  s1["Story 1 (MVP)"] s2["Story 2 (MVP)"] s3["Story 3 (MVP)"] space s4["Story 4 (MVP)"] space s5["Story 5 (MVP)"] space
+  subgraph MVP["MVP (Iteration 1)"]
+    direction LR
+    S1["S1: Story 1\n(Must, M)"]
+    S2["S2: Story 2\n(Must, S)"]
+    S3["S3: Story 3\n(Must, L)"]
+  end
 
-  %% 1.0 stories
-  s6["Story 6 (1.0)"] space s7["Story 7 (1.0)"] s8["Story 8 (1.0)"] space s9["Story 9 (1.0)"] space s10["Story 10 (1.0)"]
+  subgraph V1["v1.0 (Iteration 2)"]
+    direction LR
+    S4["S4: Story 4\n(Should, M)"]
+    S5["S5: Story 5\n(Should, M)"]
+  end
+
+  subgraph Backlog
+    direction LR
+    S6["S6: Story 6\n(Nice, L)"]
+  end
+
+  A1 --- T1 & T2
+  A2 --- T3 & T4
+  A3 --- T5
+  A4 --- T6
+
+  T1 --- S1
+  T2 --- S2
+  T3 --- S3
+  T4 --- S4
+  T5 --- S5
+  T6 --- S6
+
+  style Activities fill:#e67e22,color:#fff,stroke:none
+  style Tasks fill:#f39c12,color:#fff,stroke:none
+  style MVP fill:#27ae60,color:#fff,stroke:none
+  style V1 fill:#2980b9,color:#fff,stroke:none
+  style Backlog fill:#7f8c8d,color:#fff,stroke:none
 ```
 
-Adapt columns and rows to match the actual project's activities and stories.
+Adapt subgraphs and nodes to match the actual project's activities and stories. Key rules:
+- Activities at the top, linked to tasks, linked to stories
+- Stories grouped into release subgraphs (MVP, v1.0, Backlog)
+- Each story node shows ID, short title, priority, and size
+- Color-code subgraphs: green = MVP, blue = v1.0, grey = backlog
 
 Write the story map into an interactive HTML file at `ref/diagrams/<project>-story-map.html` using the `templates/diagram.html` template. Open with `spawn_browser()` on the canvas.
 

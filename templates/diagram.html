@@ -141,9 +141,24 @@
     for (const el of els) {
       const id = 'mmd-' + Math.random().toString(36).slice(2, 8);
       const source = el.textContent.trim();
-      const { svg } = await mermaid.render(id, source);
-      el.textContent = '';
-      el.insertAdjacentHTML('afterbegin', svg);
+      try {
+        const { svg } = await mermaid.render(id, source);
+        el.textContent = '';
+        el.insertAdjacentHTML('afterbegin', svg);
+      } catch (err) {
+        // Show a styled fallback with the source and error instead of raw garbage
+        const pre = document.createElement('pre');
+        pre.style.cssText = 'background:#161b22;border:1px solid #f85149;border-radius:8px;padding:1rem;overflow:auto;font-size:0.8rem;color:#e6edf3;max-width:1000px;white-space:pre-wrap;word-break:break-word;';
+        const errMsg = document.createElement('div');
+        errMsg.style.cssText = 'color:#f85149;font-weight:600;margin-bottom:0.75rem;font-family:sans-serif;';
+        errMsg.textContent = 'Mermaid render error: ' + err.message;
+        const code = document.createElement('code');
+        code.textContent = source;
+        el.textContent = '';
+        el.appendChild(errMsg);
+        pre.appendChild(code);
+        el.appendChild(pre);
+      }
     }
 
     // Tab switching
