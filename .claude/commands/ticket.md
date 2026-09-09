@@ -128,7 +128,7 @@ mcp__linear__linear_create_issues({
 > **If `mcp__linear__*` tools are not available**, stop and tell the user to:
 > 1. Copy `.mcp.json.example` to `.mcp.json`
 > 2. Get a Linear API key from Settings > API > Personal API keys
-> 3. Set it in `.mcp.json` under `LINEAR_API_KEY`
+> 3. Set it in `.mcp.json` under `LINEAR_ACCESS_TOKEN`
 > 4. Run `/mcp` to reconnect
 
 ## Step 1 — Load the plan
