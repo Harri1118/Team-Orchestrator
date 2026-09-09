@@ -29,16 +29,114 @@ If $ARGUMENTS is "interactive" or empty with no plan files, skip to **Interactiv
 
 ## Step 0 — Connect to Linear
 
-Before anything else, establish the Linear context:
+Before anything else, establish the Linear context using the **Linear MCP server** (`mcp__linear__*` tools). The Linear MCP exposes a single GraphQL tool:
 
-1. Call the Linear MCP to get available teams. If multiple teams exist, ask the user which one to use.
-2. Get available labels, states, and members for the chosen team so we can tag tickets correctly.
-3. Get any existing cycles/projects to potentially associate tickets with.
+### Available Tool
+- **`mcp__linear__linear_graphql_exec`** — Execute any Linear GraphQL query or mutation. Takes a `query` string parameter and optional `variables` object.
 
-> If the Linear MCP tools aren't available, stop and tell the user to:
-> 1. Get a Linear API key from Settings > API > Personal API keys
-> 2. Set it in `.mcp.json` under `LINEAR_API_KEY`
-> 3. Run `/mcp` to reconnect
+Linear's API is **GraphQL only**. There are no REST endpoints. All reads and writes go through this tool.
+
+### Bootstrap Queries (run these first)
+
+**1. Get teams:**
+```graphql
+query { teams { nodes { id name key } } }
+```
+If multiple teams exist, ask the user which one to use. Save the `teamId` — you need it for every create mutation.
+
+**2. Get workflow states for the chosen team:**
+```graphql
+query($teamId: String!) { team(id: $teamId) { states { nodes { id name type } } } }
+```
+This gives you the state IDs (Backlog, Todo, In Progress, Done, etc.) for setting initial ticket status.
+
+**3. Get labels:**
+```graphql
+query($teamId: String!) { team(id: $teamId) { labels { nodes { id name } } } }
+```
+Use existing labels when they match; create new ones only if needed.
+
+**4. Get members:**
+```graphql
+query { users { nodes { id name email } } }
+```
+
+**5. Get existing projects/cycles:**
+```graphql
+query($teamId: String!) { team(id: $teamId) { projects { nodes { id name } } cycles { nodes { id name number startsAt endsAt } } } }
+```
+
+### Creating Tickets
+
+Use the `issueCreate` mutation:
+```graphql
+mutation($input: IssueCreateInput!) {
+  issueCreate(input: $input) {
+    success
+    issue {
+      id
+      identifier
+      title
+      url
+    }
+  }
+}
+```
+With variables:
+```json
+{
+  "input": {
+    "teamId": "<team-id>",
+    "title": "[Activity] Story title",
+    "description": "<markdown description>",
+    "priority": 1,
+    "labelIds": ["<label-id>"],
+    "stateId": "<backlog-state-id>",
+    "projectId": "<project-id>"
+  }
+}
+```
+Priority values: 0 = No priority, 1 = Urgent, 2 = High, 3 = Medium, 4 = Low.
+
+### Creating Projects
+
+```graphql
+mutation($input: ProjectCreateInput!) {
+  projectCreate(input: $input) {
+    success
+    project { id name url }
+  }
+}
+```
+
+### Creating Labels
+
+```graphql
+mutation($input: IssueLabelCreateInput!) {
+  issueLabelCreate(input: $input) {
+    success
+    issueLabel { id name }
+  }
+}
+```
+
+### Creating Issue Relations (dependencies)
+
+```graphql
+mutation($input: IssueRelationCreateInput!) {
+  issueRelationCreate(input: $input) {
+    success
+    issueRelation { id type }
+  }
+}
+```
+Relation types: `blocks`, `duplicate`, `related`.
+
+> **If `mcp__linear__linear_graphql_exec` is not available**, stop and tell the user to:
+> 1. Copy `.mcp.json.example` to `.mcp.json`
+> 2. Get a Linear API key from Settings > API > Personal API keys
+> 3. Set it in `.mcp.json` under `LINEAR_API_KEY`
+> 4. Run `/mcp` to reconnect
 
 ## Step 1 — Load the plan
 
@@ -150,13 +248,16 @@ Ask:
 
 ## Step 4 — Create tickets in Linear
 
-Once the user confirms:
+Once the user confirms, use `mcp__linear__linear_graphql_exec` for all operations:
 
-1. **Create a Linear project** (if the user wants one) with the project name and target dates from the plan
-2. **Create tickets** via the Linear MCP, one per story:
-   - Set title, description, priority, labels, and project association
-   - If stories have dependencies (from the plan), create Linear issue relations (blocks/blocked-by)
-3. **Report back** with a table of created tickets:
+1. **Create a Linear project** (if the user wants one) via `projectCreate` mutation with the project name and target dates from the plan
+2. **Create labels** that don't already exist via `issueLabelCreate` mutation (check existing labels from Step 0 first)
+3. **Create tickets** one per story via `issueCreate` mutation:
+   - Set `teamId`, `title`, `description`, `priority`, `labelIds`, `stateId`, `projectId`
+   - Use the Backlog state ID from Step 0 as the initial state
+   - Priority mapping: Must-have → 2 (High), Should-have → 3 (Medium), Nice-to-have → 4 (Low)
+4. **Create issue relations** for dependencies via `issueRelationCreate` mutation (blocks/blocked-by)
+5. **Report back** with a table of created tickets:
 
 ```markdown
 | # | Linear ID | Title | URL |
