@@ -1,0 +1,5 @@
+ref/
+.env
+*.log
+node_modules/
+.agent-grid/
