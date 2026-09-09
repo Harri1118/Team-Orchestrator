@@ -2,7 +2,7 @@
   "mcpServers": {
     "linear": {
       "command": "npx",
-      "args": ["-y", "@anthropic/linear-mcp-server"],
+      "args": ["-y", "linear-mcp"],
       "env": {
         "LINEAR_API_KEY": ""
       }

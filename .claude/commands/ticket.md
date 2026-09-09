@@ -29,110 +29,103 @@ If $ARGUMENTS is "interactive" or empty with no plan files, skip to **Interactiv
 
 ## Step 0 — Connect to Linear
 
-Before anything else, establish the Linear context using the **Linear MCP server** (`mcp__linear__*` tools). The Linear MCP exposes a single GraphQL tool:
+Before anything else, establish the Linear context using the **Linear MCP server** (`mcp__linear__*` tools).
 
-### Available Tool
-- **`mcp__linear__linear_graphql_exec`** — Execute any Linear GraphQL query or mutation. Takes a `query` string parameter and optional `variables` object.
+The MCP server is `linear-mcp` (configured in `.mcp.json`). It exposes **dedicated tools** for each operation — not raw GraphQL. Use these tools directly.
 
-Linear's API is **GraphQL only**. There are no REST endpoints. All reads and writes go through this tool.
+### Available Tools
 
-### Bootstrap Queries (run these first)
+#### Discovery (run these first)
+| Tool | Purpose | Parameters |
+|------|---------|------------|
+| `mcp__linear__linear_get_teams` | Get all teams with their states and labels | None |
+| `mcp__linear__linear_get_user` | Get current authenticated user info | None |
+| `mcp__linear__linear_list_projects` | List all projects (optional filter) | `teamId?` |
+| `mcp__linear__linear_get_project` | Get a specific project | `id` |
 
-**1. Get teams:**
-```graphql
-query { teams { nodes { id name key } } }
+#### Issue Operations
+| Tool | Purpose | Required Parameters |
+|------|---------|-------------------|
+| `mcp__linear__linear_create_issue` | Create a single issue | `title`, `description`, `teamId` |
+| `mcp__linear__linear_create_issues` | Create multiple issues at once (bulk) | `issues[]` (array of {title, description, teamId}) |
+| `mcp__linear__linear_search_issues` | Search/filter issues | `query?`, `teamIds?`, `assigneeIds?`, `states?` |
+| `mcp__linear__linear_search_issues_by_identifier` | Get issue by ID (e.g., ENG-123) | `identifier` |
+| `mcp__linear__linear_bulk_update_issues` | Update multiple issues | `issueIds[]`, update fields |
+| `mcp__linear__linear_delete_issue` | Delete a single issue | `id` (identifier like ENG-123) |
+| `mcp__linear__linear_delete_issues` | Bulk delete issues | `ids[]` |
+
+#### Project Operations
+| Tool | Purpose | Required Parameters |
+|------|---------|-------------------|
+| `mcp__linear__linear_create_project_with_issues` | Create a project AND its issues together | `project` ({name, teamIds[]}), `issues[]` |
+
+#### Comment Operations
+| Tool | Purpose | Required Parameters |
+|------|---------|-------------------|
+| `mcp__linear__linear_create_comment` | Add comment to an issue | `issueId`, `body` |
+| `mcp__linear__linear_update_comment` | Edit a comment | `id`, `body` |
+| `mcp__linear__linear_delete_comment` | Delete a comment | `id` |
+| `mcp__linear__linear_resolve_comment` | Mark comment as resolved | `id` |
+
+### Bootstrap Sequence
+
+**1. Get teams (includes states and labels):**
 ```
-If multiple teams exist, ask the user which one to use. Save the `teamId` — you need it for every create mutation.
-
-**2. Get workflow states for the chosen team:**
-```graphql
-query($teamId: String!) { team(id: $teamId) { states { nodes { id name type } } } }
+mcp__linear__linear_get_teams()
 ```
-This gives you the state IDs (Backlog, Todo, In Progress, Done, etc.) for setting initial ticket status.
+Returns all teams with their workflow states and labels. If multiple teams exist, ask the user which one. Save the `teamId`.
 
-**3. Get labels:**
-```graphql
-query($teamId: String!) { team(id: $teamId) { labels { nodes { id name } } } }
+**2. Get current user:**
 ```
-Use existing labels when they match; create new ones only if needed.
-
-**4. Get members:**
-```graphql
-query { users { nodes { id name email } } }
+mcp__linear__linear_get_user()
 ```
 
-**5. Get existing projects/cycles:**
-```graphql
-query($teamId: String!) { team(id: $teamId) { projects { nodes { id name } } cycles { nodes { id name number startsAt endsAt } } } }
+**3. Get existing projects:**
+```
+mcp__linear__linear_list_projects()
 ```
 
-### Creating Tickets
-
-Use the `issueCreate` mutation:
-```graphql
-mutation($input: IssueCreateInput!) {
-  issueCreate(input: $input) {
-    success
-    issue {
-      id
-      identifier
-      title
-      url
-    }
-  }
-}
+### Creating a Single Ticket
 ```
-With variables:
-```json
-{
-  "input": {
-    "teamId": "<team-id>",
-    "title": "[Activity] Story title",
-    "description": "<markdown description>",
-    "priority": 1,
-    "labelIds": ["<label-id>"],
-    "stateId": "<backlog-state-id>",
-    "projectId": "<project-id>"
-  }
-}
+mcp__linear__linear_create_issue({
+  title: "[Activity] Story title",
+  description: "## User Story\n...",
+  teamId: "<team-id>",
+  priority: 2,
+  assigneeId: "<user-id>",      // optional
+  createAsUser: "Team-Orchestrator"  // optional display name
+})
 ```
 Priority values: 0 = No priority, 1 = Urgent, 2 = High, 3 = Medium, 4 = Low.
 
-### Creating Projects
+### Creating a Project with All Tickets at Once (preferred)
+```
+mcp__linear__linear_create_project_with_issues({
+  project: {
+    name: "Daily Habit Tracker — MVP",
+    description: "Iteration 1: Core habit loop",
+    teamIds: ["<team-id>"]
+  },
+  issues: [
+    { title: "[Auth] Project setup", description: "...", teamId: "<team-id>", priority: 2 },
+    { title: "[Habits] CRUD operations", description: "...", teamId: "<team-id>", priority: 2 },
+    ...
+  ]
+})
+```
+This is the most efficient path — creates the project and all tickets in one call.
 
-```graphql
-mutation($input: ProjectCreateInput!) {
-  projectCreate(input: $input) {
-    success
-    project { id name url }
-  }
-}
+### Bulk Create (without a project)
+```
+mcp__linear__linear_create_issues({
+  issues: [
+    { title: "...", description: "...", teamId: "...", projectId: "...", labelIds: ["..."] },
+    ...
+  ]
+})
 ```
 
-### Creating Labels
-
-```graphql
-mutation($input: IssueLabelCreateInput!) {
-  issueLabelCreate(input: $input) {
-    success
-    issueLabel { id name }
-  }
-}
-```
-
-### Creating Issue Relations (dependencies)
-
-```graphql
-mutation($input: IssueRelationCreateInput!) {
-  issueRelationCreate(input: $input) {
-    success
-    issueRelation { id type }
-  }
-}
-```
-Relation types: `blocks`, `duplicate`, `related`.
-
-> **If `mcp__linear__linear_graphql_exec` is not available**, stop and tell the user to:
+> **If `mcp__linear__*` tools are not available**, stop and tell the user to:
 > 1. Copy `.mcp.json.example` to `.mcp.json`
 > 2. Get a Linear API key from Settings > API > Personal API keys
 > 3. Set it in `.mcp.json` under `LINEAR_API_KEY`
@@ -248,16 +241,16 @@ Ask:
 
 ## Step 4 — Create tickets in Linear
 
-Once the user confirms, use `mcp__linear__linear_graphql_exec` for all operations:
+Once the user confirms, use the dedicated `mcp__linear__*` tools:
 
-1. **Create a Linear project** (if the user wants one) via `projectCreate` mutation with the project name and target dates from the plan
-2. **Create labels** that don't already exist via `issueLabelCreate` mutation (check existing labels from Step 0 first)
-3. **Create tickets** one per story via `issueCreate` mutation:
-   - Set `teamId`, `title`, `description`, `priority`, `labelIds`, `stateId`, `projectId`
-   - Use the Backlog state ID from Step 0 as the initial state
-   - Priority mapping: Must-have → 2 (High), Should-have → 3 (Medium), Nice-to-have → 4 (Low)
-4. **Create issue relations** for dependencies via `issueRelationCreate` mutation (blocks/blocked-by)
-5. **Report back** with a table of created tickets:
+**Preferred approach — project + issues in one call:**
+Use `mcp__linear__linear_create_project_with_issues` to create the project and all tickets together. This is the most efficient path.
+
+**Alternative — tickets only (no project):**
+1. Use `mcp__linear__linear_create_issues` for bulk creation, or `mcp__linear__linear_create_issue` one at a time
+2. Priority mapping: Must-have → 2 (High), Should-have → 3 (Medium), Nice-to-have → 4 (Low)
+
+**Report back** with a table of created tickets:
 
 ```markdown
 | # | Linear ID | Title | URL |
