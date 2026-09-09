@@ -14,8 +14,8 @@ Format: `[Phase] Project Name — Artifact Type`
 | `/plan` | `[Plan] <project> — Architecture` | purple |
 | `/preflight` | `[Preflight] <project> — Requirements` | orange |
 | `/ticket` | `[Tickets] <project> — Manifest` | green |
-| `/roadmap` | `[Roadmap] <project> — Timeline` | teal |
-| `/roadmap` | `[Roadmap] <project> — Story Map` | teal |
+| `/roadmap` | `[Roadmap] <project> — Dashboard` | blue |
+| `/roadmap` | Browser: `<project>-roadmap.html` | (browser pane) |
 | `/build` | `[Build] <ticket-id> — Log` | yellow |
 | `/qa` | `[QA] <ticket-id> — Report` | red |
 | `/validate` | `[Validate] <ticket-id> — Report` | green |
@@ -42,3 +42,20 @@ Each command reads upstream panes before starting work:
 3. Command does its work
 4. Command creates its output pane via `spawn_note_pane()`
 5. Also writes to `ref/` for persistent storage (panes are ephemeral; ref/ is durable)
+
+## HTML Diagram Output
+
+Commands that produce diagrams (`/plan`, `/preflight`, `/roadmap`) generate **interactive HTML files** instead of raw mermaid code blocks.
+
+- Template: `templates/diagram.html` — dark-themed, tabbed, zoomable
+- Output: `ref/diagrams/<project>-<type>.html`
+- Display: opened on canvas via `spawn_browser({ url: "file://..." })`
+- Features: Mermaid JS (CDN), tab switching for multi-diagram pages, zoom controls
+- Also saved: raw mermaid sources in `ref/story-maps/` for version control
+
+| Command | HTML File | Tabs |
+|---------|-----------|------|
+| `/plan` | `<project>-story-map.html` | Story Map |
+| `/plan` | `<project>-architecture.html` | System Context, Container, Data Flow |
+| `/preflight` | `<project>-preflight.html` | Dependency Graph |
+| `/roadmap` | `<project>-roadmap.html` | Story Map, Timeline, Architecture, Pipeline |

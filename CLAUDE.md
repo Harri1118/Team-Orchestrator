@@ -25,7 +25,7 @@ Run each slash command individually in your Claude Code session. You control the
 | `/plan` | XP Planner | Generate mission, user stories, architecture, story map |
 | `/preflight` | Requirements Agent | Identify API keys, accounts, env vars needed before work starts |
 | `/ticket` | Ticket Maker | Create Linear tickets from user stories with acceptance criteria |
-| `/roadmap` | Release Planner | Generate story map + release plan as mermaid on AgentGrid canvas |
+| `/roadmap` | Release Planner | Generate interactive HTML diagrams for story map, timeline, architecture |
 | `/build` | Builder | Implement a ticket following the approved plan |
 | `/qa` | QA Reviewer | Adversarial code review — find bugs, pattern violations, security issues |
 | `/validate` | Validator | Final validation against ticket requirements before merge |
@@ -61,8 +61,8 @@ How it works:
 | Plan | `[Plan] <project> — Architecture` | purple | `/plan` |
 | Preflight | `[Preflight] <project> — Requirements` | orange | `/preflight` |
 | Tickets | `[Tickets] <project> — Manifest` | green | `/ticket` |
-| Roadmap | `[Roadmap] <project> — Timeline` | teal | `/roadmap` |
-| Roadmap | `[Roadmap] <project> — Story Map` | teal | `/roadmap` |
+| Roadmap | `[Roadmap] <project> — Dashboard` | blue | `/roadmap` |
+| Roadmap | Browser: `<project>-roadmap.html` | (browser pane) | `/roadmap` |
 | Build | `[Build] <ticket-id> — Log` | yellow | `/build` |
 | QA | `[QA] <ticket-id> — Report` | red | `/qa` |
 | Validate | `[Validate] <ticket-id> — Report` | green/red | `/validate` |
@@ -72,7 +72,8 @@ All commands write to `ref/` for durable storage that persists across sessions:
 - `ref/briefs/` — vision output (project briefs)
 - `ref/plans/` — XP plans with user stories and architecture
 - `ref/tickets/` — ticket specs, build logs, QA reports, validation reports
-- `ref/story-maps/` — generated story map mermaid files
+- `ref/story-maps/` — raw mermaid sources for version control
+- `ref/diagrams/` — interactive HTML diagram files (open in browser)
 
 Workers share the filesystem, so any worker can `Read` files another worker wrote. This is the fallback when canvas panes aren't available (e.g., after session resume).
 

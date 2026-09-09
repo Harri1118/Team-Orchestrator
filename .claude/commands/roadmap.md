@@ -1,12 +1,12 @@
 ---
-description: Generate visual story map and release roadmap as mermaid diagrams on AgentGrid canvas
+description: Generate interactive HTML diagrams for story map, timeline, architecture, and pipeline
 argument-hint: [path to plan, or omit to use latest]
 allowed-tools: Read, Write, Glob, Grep, Bash, mcp__agent_grid_workers__*
 ---
 
-# Roadmap — Story Map & Release Plan Visualizer
+# Roadmap — Interactive Diagram Generator
 
-You are a visual project planner. Your job is to take the XP plan and ticket manifest and generate rich mermaid diagrams that display on the AgentGrid canvas as a living project dashboard.
+You are a visual project planner. Your job is to take the XP plan and ticket manifest and generate **interactive HTML diagram pages** that can be opened in a browser or displayed on the AgentGrid canvas via `spawn_browser()`.
 
 ## Canvas Integration
 
@@ -19,16 +19,34 @@ You are a visual project planner. Your job is to take the XP plan and ticket man
    - `[Tickets] ... — Manifest` — for Linear IDs to embed in diagrams
 3. Fall back to `ref/` files if canvas panes don't exist.
 
-### On Finish — Create output panes
-Create multiple visual panes — this is the command that populates the canvas dashboard:
+### On Finish — Create HTML diagrams and canvas summary
 
-1. **Story Map** — `spawn_note_pane()`, title: `[Roadmap] <project> — Story Map`, color: `teal`. Contains: the Jeff Patton mermaid block-beta diagram.
-2. **Timeline** — `spawn_note_pane()`, title: `[Roadmap] <project> — Timeline`, color: `teal`. Contains: the Gantt chart mermaid.
-3. **Architecture** — `spawn_note_pane()`, title: `[Roadmap] <project> — Architecture`, color: `teal`. Contains: C4 mermaid diagrams.
-4. **Pipeline** — `spawn_note_pane()`, title: `[Roadmap] <project> — Pipeline`, color: `teal`. Contains: the quality gates flowchart.
-5. Also write everything to `ref/story-maps/`.
+**HTML Diagram Output (primary):**
+Generate interactive HTML files using `templates/diagram.html` as the base. Create these files:
 
-Tell the user: "Roadmap dashboard is on the canvas — story map, timeline, architecture, and pipeline are all visible."
+1. `ref/diagrams/<project>-roadmap.html` — **Main roadmap dashboard** with all diagrams as tabs:
+   - Tab 1: Story Map (Jeff Patton block-beta)
+   - Tab 2: Timeline (Gantt chart)
+   - Tab 3: Architecture (C4 diagrams)
+   - Tab 4: Pipeline (quality gates flowchart)
+
+For each HTML file:
+- Copy `templates/diagram.html` and replace `{{TITLE}}` and `{{DATE}}`
+- Add a `<div class="tab" data-panel="...">` for each tab
+- Add a `<div class="panel" id="...">` with a `<div class="mermaid">` containing the diagram definition
+- Optionally add a `<div class="description">` below each diagram with context/legend
+
+Open the main roadmap HTML with `spawn_browser({ url: "file://<absolute-path-to-roadmap.html>" })` so it's interactive on the canvas.
+
+**Canvas summary pane (secondary):**
+Also create a single `spawn_note_pane()`, title: `[Roadmap] <project> — Dashboard`, color: `blue`. This note contains:
+- A text summary of the roadmap (milestones, story counts, release themes)
+- Links to the HTML files in `ref/diagrams/`
+- This pane is for quick reference; the HTML files are the real artifacts
+
+Also write the raw mermaid sources to `ref/story-maps/` for version control.
+
+Tell the user: "Roadmap is live — interactive diagrams opened in browser. Files saved to `ref/diagrams/`. The canvas has a summary pane with links."
 
 ---
 
@@ -112,7 +130,7 @@ Adapt this template to the actual project data. Key rules:
 - Stories are positioned under the User Task they belong to
 - Visual rows correspond to releases (MVP, 1.0, 1.1, Backlog)
 
-Write the story map mermaid to `ref/story-maps/<project-name>-story-map.md`.
+This mermaid definition goes into the Story Map tab/panel of the HTML dashboard.
 
 ## Step 2 — Generate the Release Timeline (Gantt)
 
@@ -143,7 +161,7 @@ gantt
 
 Use actual dates from the plan's iteration schedule. Include QA gates and release milestones.
 
-Write to `ref/story-maps/<project-name>-gantt.md`.
+This mermaid definition goes into the Timeline tab/panel of the HTML dashboard.
 
 ## Step 3 — Generate the Architecture Diagram
 
@@ -216,7 +234,7 @@ flowchart TD
     D --> B
 ```
 
-Write to `ref/story-maps/<project-name>-architecture.md`.
+These mermaid definitions go into the Architecture tab/panel of the HTML dashboard. For brownfield projects, add a second sub-tab or stacked diagram showing the change impact.
 
 ## Step 4 — Generate the Pipeline/Gate Diagram
 
@@ -241,30 +259,41 @@ flowchart LR
     R --> B
 ```
 
-## Step 5 — Write all diagrams to note files
+## Step 5 — Build the interactive HTML dashboard
 
-Create a consolidated file at `ref/story-maps/<project-name>-roadmap.md` with all diagrams:
+Generate the HTML roadmap file using `templates/diagram.html`:
 
-```markdown
-# <Project Name> — Roadmap
+1. Read `templates/diagram.html` as the base
+2. Replace `{{TITLE}}` with `<Project Name> — Roadmap` and `{{DATE}}` with today's date
+3. Insert tabs and panels for each diagram (Story Map, Timeline, Architecture, Pipeline)
+4. Each panel has:
+   - A `<div class="mermaid">` containing the raw mermaid definition (the JS renders it client-side)
+   - A `<div class="description">` with a legend or reading guide
 
-## Story Map
-<mermaid block-beta diagram>
+Example panel structure:
+```html
+<!-- In #tabs -->
+<div class="tab active" data-panel="story-map">Story Map</div>
+<div class="tab" data-panel="timeline">Timeline</div>
+<div class="tab" data-panel="architecture">Architecture</div>
+<div class="tab" data-panel="pipeline">Pipeline</div>
 
-## Release Timeline
-<mermaid gantt diagram>
-
-## Architecture
-<mermaid C4 diagrams>
-
-## Pipeline
-<mermaid flowchart>
-
----
-Generated: <date>
-Source plan: <path to plan file>
-Ticket manifest: <path to tickets file>
+<!-- In #panels -->
+<div class="panel active" id="story-map">
+  <div class="mermaid">
+    block-beta
+      columns 5
+      ...
+  </div>
+  <div class="description">
+    <strong>Reading the map:</strong> Top row = activities, second row = tasks, release rows = stories sliced by iteration.
+  </div>
+</div>
 ```
+
+5. Write to `ref/diagrams/<project>-roadmap.html`
+6. Open with `spawn_browser({ url: "file://<absolute-path>" })`
+7. Also save raw mermaid sources to `ref/story-maps/<project>-roadmap.md` for version control
 
 ## Step 5.5 — PM Roadmap Review Interview
 
@@ -290,14 +319,9 @@ Before finalizing the roadmap, ask these questions. These are what a PM asks to 
 11. **Are there dependencies on other teams or external parties that should be on the timeline?** (Design review, security audit, legal approval)
 12. **What risks should be visible on the roadmap?** (Some PMs mark known risks directly on the Gantt — "API vendor stability" or "design dependency")
 
-## Step 6 — Display on AgentGrid canvas
+## Step 6 — Canvas summary pane
 
-Tell the user which files were generated and where. The mermaid diagrams can be displayed as AgentGrid notes by writing them to `.agent-grid/notes/`:
-
-Suggest to the user:
-- "Copy the story map diagram to `.agent-grid/notes/story-map.md` to see it on the canvas"
-- "Copy the gantt chart to `.agent-grid/notes/timeline.md` to see the release timeline"
-- Or offer to do it for them.
+Create a `spawn_note_pane()` with the text summary and links to HTML files.
 
 Present a text summary of the roadmap:
 
@@ -329,4 +353,4 @@ Present a text summary of the roadmap:
 - Gate 5: Manual smoke test before merge
 ```
 
-Tell the user: "Your roadmap is generated. Run `/build <TICKET-ID>` to start implementing the first ticket."
+Tell the user: "Your roadmap is live — interactive HTML opened in browser on the canvas. Files in `ref/diagrams/`. Run `/build <TICKET-ID>` to start implementing the first ticket."

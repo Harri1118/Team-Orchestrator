@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{TITLE}}</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      padding: 1rem 2rem;
+      border-bottom: 1px solid #30363d;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    header h1 { font-size: 1.25rem; font-weight: 600; }
+    header .meta { font-size: 0.8rem; color: #8b949e; }
+    .tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid #30363d;
+      padding: 0 2rem;
+      overflow-x: auto;
+    }
+    .tab {
+      padding: 0.75rem 1.25rem;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      color: #8b949e;
+      font-size: 0.875rem;
+      white-space: nowrap;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .tab:hover { color: #e6edf3; }
+    .tab.active { color: #e6edf3; border-bottom-color: #58a6ff; }
+    .panels { flex: 1; overflow: auto; }
+    .panel {
+      display: none;
+      padding: 2rem;
+      width: 100%;
+      overflow: auto;
+    }
+    .panel.active { display: flex; flex-direction: column; align-items: center; }
+    .panel .mermaid {
+      width: 100%;
+      max-width: 1200px;
+      overflow: auto;
+    }
+    .panel .description {
+      max-width: 800px;
+      margin-top: 1.5rem;
+      padding: 1rem 1.5rem;
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      line-height: 1.6;
+      color: #8b949e;
+    }
+    .toolbar {
+      padding: 0.5rem 2rem;
+      border-top: 1px solid #30363d;
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      font-size: 0.8rem;
+      color: #8b949e;
+    }
+    .toolbar button {
+      padding: 0.35rem 0.75rem;
+      background: #21262d;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      color: #e6edf3;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: background 0.15s;
+    }
+    .toolbar button:hover { background: #30363d; }
+    svg { max-width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>{{TITLE}}</h1>
+    <span class="meta">Generated {{DATE}} &mdash; Team-Orchestrator</span>
+  </header>
+
+  <div class="tabs" id="tabs">
+    <!-- Tabs injected by each diagram page -->
+  </div>
+
+  <div class="panels" id="panels">
+    <!-- Panels injected by each diagram page -->
+  </div>
+
+  <div class="toolbar">
+    <button onclick="zoomIn()">Zoom +</button>
+    <button onclick="zoomOut()">Zoom &minus;</button>
+    <button onclick="resetZoom()">Reset</button>
+    <span id="zoom-level">100%</span>
+  </div>
+
+  <!--
+    NOTE: el.innerHTML is used below to inject Mermaid's own rendered SVG output.
+    This is safe — the input is mermaid diagram definitions embedded in this file
+    (not user-supplied content), and mermaid.render() returns sanitized SVG.
+  -->
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'dark',
+      themeVariables: {
+        darkMode: true,
+        background: '#0d1117',
+        primaryColor: '#58a6ff',
+        primaryTextColor: '#e6edf3',
+        primaryBorderColor: '#30363d',
+        lineColor: '#8b949e',
+        secondaryColor: '#1f6feb',
+        tertiaryColor: '#161b22',
+      },
+      flowchart: { curve: 'basis', htmlLabels: true },
+      gantt: { useWidth: 1100 },
+    });
+
+    // Render all mermaid blocks — content is from static diagram definitions
+    // embedded at build time, not from user input (safe to set innerHTML)
+    const els = document.querySelectorAll('.mermaid');
+    for (const el of els) {
+      const id = 'mmd-' + Math.random().toString(36).slice(2, 8);
+      const source = el.textContent.trim();
+      const { svg } = await mermaid.render(id, source);
+      el.textContent = '';
+      el.insertAdjacentHTML('afterbegin', svg);
+    }
+
+    // Tab switching
+    document.getElementById('tabs').addEventListener('click', (e) => {
+      const tab = e.target.closest('.tab');
+      if (!tab) return;
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById(tab.dataset.panel).classList.add('active');
+    });
+
+    // Activate first tab
+    const firstTab = document.querySelector('.tab');
+    if (firstTab) firstTab.click();
+  </script>
+
+  <script>
+    let zoom = 100;
+    function applyZoom() {
+      document.querySelectorAll('.mermaid').forEach(el => {
+        el.style.transform = `scale(${zoom / 100})`;
+        el.style.transformOrigin = 'top center';
+      });
+      document.getElementById('zoom-level').textContent = zoom + '%';
+    }
+    function zoomIn()    { zoom = Math.min(200, zoom + 10); applyZoom(); }
+    function zoomOut()   { zoom = Math.max(30, zoom - 10); applyZoom(); }
+    function resetZoom() { zoom = 100; applyZoom(); }
+  </script>
+</body>
+</html>

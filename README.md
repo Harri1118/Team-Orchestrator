@@ -9,7 +9,7 @@ Takes a video, transcript, or project idea and produces:
 - XP plan with user stories, architecture, and story map
 - Prerequisites checklist (API keys, accounts, env vars)
 - Linear tickets with full acceptance criteria
-- Visual roadmap with mermaid diagrams (story map, Gantt, architecture)
+- Interactive HTML diagrams (story map, Gantt, architecture) — zoomable, tabbed, dark-themed
 - Implementation, QA, and validation pipeline
 
 ## Commands
@@ -20,7 +20,7 @@ Takes a video, transcript, or project idea and produces:
 | `/plan` | Generate XP plan with stories, architecture, story map |
 | `/preflight` | Identify all prerequisites before work starts |
 | `/ticket` | Create Linear tickets from user stories |
-| `/roadmap` | Generate visual story map + release timeline |
+| `/roadmap` | Generate interactive HTML diagrams (story map, timeline, architecture) |
 | `/build <ticket>` | Implement a ticket with XP discipline |
 | `/qa` | Adversarial code review (no changes, only findings) |
 | `/validate` | Final pre-merge validation |

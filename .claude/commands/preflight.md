@@ -15,12 +15,13 @@ You are a DevOps lead and project setup specialist. Your job is to analyze a pro
 2. If `[Plan] ... — XP Plan` exists, `associate_pane()` and `read_pane()` to load the plan. Also read `[Plan] ... — Architecture` for tech stack details.
 3. Fall back to `ref/plans/` files if no canvas pane exists.
 
-### On Finish — Create output pane
+### On Finish — Create output pane and HTML diagram
 1. `spawn_note_pane()`, title: `[Preflight] <project> — Requirements`, color: `orange`.
-2. Content: the setup checklist with status markers (DONE/BLOCKED/PENDING), the dependency graph (mermaid), and the blockers summary.
-3. Also write to `ref/plans/<project>-preflight.md`.
+2. Content: the setup checklist with status markers (DONE/BLOCKED/PENDING), the blockers summary, and a link to the interactive dependency graph HTML.
+3. Generate the dependency graph as `ref/diagrams/<project>-preflight.html` using `templates/diagram.html` (see Step 2). Open with `spawn_browser()`.
+4. Also write the full report to `ref/plans/<project>-preflight.md`.
 
-Tell the user: "Preflight checklist is on the canvas. Update it as you resolve items."
+Tell the user: "Preflight checklist is on the canvas. Dependency graph is interactive in the browser pane. Update the checklist as you resolve items."
 
 ---
 
@@ -150,7 +151,11 @@ Determine the order things must be set up. Some requirements block others:
 - OAuth app must be registered before you can get client ID/secret
 - Domain must be configured before SSL can be provisioned
 
-Generate a mermaid dependency graph:
+Generate an **interactive HTML dependency graph** using `templates/diagram.html`:
+
+1. Copy the template to `ref/diagrams/<project>-preflight.html`
+2. Replace `{{TITLE}}` with `<Project> — Setup Dependencies` and `{{DATE}}`
+3. Add a single panel with this mermaid definition (adapt to actual dependencies):
 
 ```mermaid
 flowchart TD
@@ -162,6 +167,9 @@ flowchart TD
     E --> F
     F --> G[Ready to develop]
 ```
+
+4. Add a `<div class="description">` with status of each node (DONE/PENDING/BLOCKED)
+5. Open with `spawn_browser({ url: "file://<absolute-path>" })` on the canvas
 
 ## Step 3 — Interactive setup checklist
 

@@ -15,15 +15,24 @@ You are a senior technical product manager and system architect who follows Extr
 2. If a `[Vision] ... — Brief` pane exists, `associate_pane()` and `read_pane()` to load the brief. This is your primary input.
 3. Fall back to `ref/briefs/` files if no canvas pane exists.
 
-### On Finish — Create output panes
+### On Finish — Create output panes and HTML diagrams
 After generating the plan, create canvas note panes for each major artifact:
 
 1. **Plan pane** — `spawn_note_pane()`, title: `[Plan] <project> — XP Plan`, color: `purple`. Contains: mission, personas, stories summary, iteration plan.
-2. **Story Map pane** — `spawn_note_pane()`, title: `[Plan] <project> — Story Map`, color: `purple`. Contains: the mermaid block-beta story map diagram.
-3. **Architecture pane** — `spawn_note_pane()`, title: `[Plan] <project> — Architecture`, color: `purple`. Contains: mermaid C4 diagrams.
+2. **Story Map pane** — `spawn_note_pane()`, title: `[Plan] <project> — Story Map`, color: `purple`. Contains: a summary of the story map and a link to the interactive HTML file.
+3. **Architecture pane** — `spawn_note_pane()`, title: `[Plan] <project> — Architecture`, color: `purple`. Contains: architecture summary and a link to the interactive HTML file.
 4. Also write everything to `ref/plans/<slug>-plan.md` as durable storage.
 
-Tell the user: "Plan artifacts are on the canvas. `/preflight`, `/ticket`, and `/roadmap` will read them automatically."
+**HTML Diagram Output:**
+All mermaid diagrams must be rendered as **interactive HTML files** instead of raw mermaid code blocks. Use `templates/diagram.html` as the base template. For each diagram page:
+1. Copy the template to `ref/diagrams/<project>-<type>.html` (e.g., `ref/diagrams/habit-tracker-story-map.html`, `ref/diagrams/habit-tracker-architecture.html`)
+2. Replace `{{TITLE}}` with the diagram title, `{{DATE}}` with today's date
+3. Add tabs and panels for each diagram. Each panel contains a `<div class="mermaid">` with the diagram definition and an optional `<div class="description">` with context
+4. Open the HTML file with `spawn_browser({ url: "file://<absolute-path>" })` so the user can interact with it on the canvas
+
+The HTML files are self-contained (Mermaid JS loaded from CDN), zoomable, and tabbed when a page has multiple diagrams.
+
+Tell the user: "Plan artifacts are on the canvas. Interactive diagrams are in `ref/diagrams/` — open them in any browser. `/preflight`, `/ticket`, and `/roadmap` will read them automatically."
 
 ---
 
@@ -268,6 +277,8 @@ Generate mermaid diagrams for:
 2. **Container diagram** — major components and their connections
 3. **Data flow** — primary use case end-to-end
 
+Write these diagrams into an interactive HTML file at `ref/diagrams/<project>-architecture.html` using the `templates/diagram.html` template. Each diagram becomes a tab in the HTML page. Open with `spawn_browser()` on the canvas.
+
 ## Step 5 — Story Map (Jeff Patton style)
 
 Organize all stories into a story map structure:
@@ -319,6 +330,8 @@ block-beta
 ```
 
 Adapt columns and rows to match the actual project's activities and stories.
+
+Write the story map into an interactive HTML file at `ref/diagrams/<project>-story-map.html` using the `templates/diagram.html` template. Open with `spawn_browser()` on the canvas.
 
 ## Step 5.5 — Incremental Build Order
 
